@@ -111,7 +111,6 @@ def test_source_bucket_audio_available(s3_client, bucket, file_names):
     assert file_uploaded, "Could not upload file to S3 bucket"
 
 
-"""
 @pytest.mark.order(2)
 def test_lambda_invoked(logs_client):
 
@@ -120,7 +119,7 @@ def test_lambda_invoked(logs_client):
 
     # Get the latest log stream for the specified log group
     log_streams = logs_client.describe_log_streams(
-        logGroupName="/aws/lambda/EncryptPDF",
+        logGroupName="/aws/lambda/RunTranscriptionJob",
         orderBy="LastEventTime",
         descending=True,
         limit=1,
@@ -130,7 +129,8 @@ def test_lambda_invoked(logs_client):
 
     # Retrieve the log events from the latest log stream
     log_events = logs_client.get_log_events(
-        logGroupName="/aws/lambda/EncryptPDF", logStreamName=latest_log_stream_name
+        logGroupName=f"/aws/lambda/RunTranscriptionJob",
+        logStreamName=latest_log_stream_name,
     )
 
     success_found = False
@@ -146,6 +146,7 @@ def test_lambda_invoked(logs_client):
     ), "Lambda function execution did not report 'success' status in logs."
 
 
+"""
 @pytest.mark.order(3)
 def test_encrypted_file_in_bucket(s3_client):
     # Specify the destination S3 bucket and the expected converted file key

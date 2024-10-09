@@ -1,0 +1,122 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Serverless Application Model for transcribing audio to docx.
+Resources:
+
+  RunTranscriptionJob:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/transcribe/
+      Description: 'Runs a transcription job'
+      MemorySize: 128
+      Timeout: 3
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      Architectures:
+        - x86_64
+      EphemeralStorage:
+        Size: 512
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 21600
+        MaximumRetryAttempts: 2
+      PackageType: Zip
+      Environment:
+        Variables:
+          MAX_SPEAKERS: 5
+
+  #     Policies:
+  #       - Statement:
+  #           - Effect: Allow
+  #             Action:
+  #               - logs:CreateLogGroup
+  #             Resource: arn:aws:logs:us-east-1:<acct-no>:*
+  #           - Effect: Allow
+  #             Action:
+  #               - logs:CreateLogStream
+  #               - logs:PutLogEvents
+  #             Resource:
+  #               - >-
+  #                 arn:aws:logs:us-east-1:<acct-no>:log-group:/aws/lambda/mytranscribefunc:*
+  #           - Effect: Allow
+  #             Action:
+  #               - transcribe:*
+  #             Resource: '*'
+  #           - Effect: Allow
+  #             Action:
+  #               - s3:GetObject
+  #             Resource:
+  #               - arn:aws:s3:::*transcribe*
+  #           - Effect: Allow
+  #             Action:
+  #               - autoscaling:Describe*
+  #               - cloudwatch:*
+  #               - logs:*
+  #               - sns:*
+  #               - iam:GetPolicy
+  #               - iam:GetPolicyVersion
+  #               - iam:GetRole
+  #               - oam:ListSinks
+  #             Resource: '*'
+  #           - Effect: Allow
+  #             Action:
+  #               - iam:CreateServiceLinkedRole
+  #             Resource: >-
+  #               arn:aws:iam::*:role/aws-service-role/events.amazonaws.com/AWSServiceRoleForCloudWatchEvents*
+  #             Condition:
+  #               StringLike:
+  #                 iam:AWSServiceName: events.amazonaws.com
+  #           - Effect: Allow
+  #             Action:
+  #               - oam:ListAttachedLinks
+  #             Resource: arn:aws:oam:*:*:sink/*
+  #           - Effect: Allow
+  #             Action:
+  #               - s3:*
+  #               - s3-object-lambda:*
+  #             Resource: '*'
+  #     RecursiveLoop: Terminate
+  #     SnapStart:
+  #       ApplyOn: None
+  #     Events:
+  #       BucketEvent1:
+  #         Type: S3
+  #         Properties:
+  #           Bucket:
+  #             Ref: Bucket1
+  #           Events:
+  #             - s3:ObjectCreated:*
+  #           Filter:
+  #             S3Key:
+  #               Rules:
+  #                 - Name: prefix
+  #                   Value: audio/
+  #                 - Name: suffix
+  #                   Value: .m4a
+  #     RuntimeManagementConfig:
+  #       UpdateRuntimeOn: Auto
+
+  # Bucket1:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     VersioningConfiguration:
+  #       Status: Enabled
+  #     BucketEncryption:
+  #       ServerSideEncryptionConfiguration:
+  #         - ServerSideEncryptionByDefault:
+  #             SSEAlgorithm: AES256
+
+  # BucketPolicy1:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: Bucket1
+  #     PolicyDocument:
+  #       Statement:
+  #         - Action: s3:*
+  #           Effect: Deny
+  #           Principal: '*'
+  #           Resource:
+  #             - arn:aws:s3:::Bucket1/*
+  #             - arn:aws:s3:::Bucket1
+  #           Condition:
+  #             Bool:
+  #               aws:SecureTransport: false
