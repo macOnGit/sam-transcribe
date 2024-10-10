@@ -1,103 +1,12 @@
-from dataclasses import dataclass
-from pathlib import Path
-import boto3
 import json
 import pytest
 import time
-import os
-from dotenv import load_dotenv
-
-base_path = Path(__file__).parents[2]
-fixtures_path = base_path / "fixtures"
-
-
-@dataclass
-class Bucket:
-    base: str
-    audio: str
-    transcribed: str
-    converted: str
-
-
-@dataclass
-class FileNames:
-    audio: str
-    transcribed: str
-    converted: str
-
-
-@pytest.fixture(scope="session")
-def _load_dotenv():
-    load_dotenv()
-
-
-@pytest.fixture(scope="session")
-def bucket(_load_dotenv):
-    base = os.environ.get("TEST_BUCKET_NAME")
-    if not base:
-        raise Exception("Cannot find env TEST_BUCKET_NAME")
-    return Bucket(
-        base=base,
-        audio=f"/audio",
-        transcribed=f"/transcribed",
-        converted=f"/converted",
-    )
-
-
-@pytest.fixture(scope="session")
-def file_names(_load_dotenv):
-    audio = os.environ.get("TEST_AUDIO_FILE_NAME")
-    if not audio:
-        raise Exception("Cannot find env TEST_AUDIO_FILE_NAME")
-
-    transcribed = os.environ.get("TEST_TRANSCRIBED_FILE_NAME")
-    if not transcribed:
-        raise Exception("Cannot find env TEST_TRANSCRIBED_FILE_NAME")
-
-    converted = os.environ.get("TEST_CONVERTED_FILE_NAME")
-    if not converted:
-        raise Exception("Cannot find env TEST_CONVERTED_FILE_NAME")
-
-    return FileNames(
-        audio=audio,
-        transcribed=transcribed,
-        converted=converted,
-    )
-
-
-@pytest.fixture
-def lambda_client():
-    return boto3.client("lambda")
-
-
-@pytest.fixture
-def s3_client():
-    return boto3.client("s3")
-
-
-@pytest.fixture
-def logs_client():
-    return boto3.client("logs")
-
-
-@pytest.fixture(scope="session")
-def cleanup(bucket, file_names):
-    # Create a new S3 client for cleanup
-    s3_client = boto3.client("s3")
-
-    yield
-    # Cleanup code will be executed after all tests have finished
-
-    # Delete test audio file from bucket
-    bucket_key = f"{bucket.audio}/{file_names.audio}"
-    s3_client.delete_object(Bucket=bucket.base, Key=bucket_key)
-    print(f"\nDeleted {file_names.audio} from {bucket.base}")
 
 
 @pytest.mark.order(1)
 def test_source_bucket_audio_available(s3_client, bucket, file_names):
     s3_bucket_name = bucket.base
-    file_path = str(fixtures_path / file_names.audio)
+    file_path = str(file_names.fixtures_path / file_names.audio)
     prefixed_file_name = f"{bucket.audio}/{file_names.audio}"
 
     file_uploaded = False

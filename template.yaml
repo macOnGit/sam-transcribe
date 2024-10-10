@@ -120,3 +120,10 @@ Resources:
   #           Condition:
   #             Bool:
   #               aws:SecureTransport: false
+# Outputs:
+#   StockTradingStateMachineArn:
+#     Description: "Stock Trading State machine ARN"
+#     Value: !Ref StockTradingStateMachine
+#   StockTradingStateMachineRoleArn:
+#     Description: "IAM Role created for Stock Trading State machine based on the specified SAM Policy Templates"
+#     Value: !GetAtt StockTradingStateMachineRole.Arn
