@@ -1,0 +1,9 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "sam-transcribe"
+resolve_s3 = true
+s3_prefix = "sam-transcribe"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "TranscribeBucketName=\"sam-transcribe-test-bucket-20241007\" MaxSpeakers=\"5\""
+image_repositories = []

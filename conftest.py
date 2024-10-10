@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 from dataclasses import dataclass
 import boto3
+import tomllib
+import re
 import os
 from dotenv import load_dotenv
 
@@ -17,6 +19,22 @@ def event(request):
     with json_file.open() as fp:
         fixture = json.load(fp)
     return fixture
+
+
+@pytest.fixture(scope="session")
+def samconfig_params():
+    samconfig_file = base_path / "samconfig.toml"
+    with samconfig_file.open("rb") as fp:
+        data = tomllib.load(fp)
+    return data["default"]["deploy"]["parameters"]["parameter_overrides"]
+
+
+@pytest.fixture(scope="session")
+def bucket_name(samconfig_params):
+    # TODO: match AWS bucket naming rules
+    match = re.search('TranscribeBucketName="([a-zA-Z0-9-]+)"', samconfig_params)
+    if match:
+        return match.group(1)
 
 
 @dataclass
@@ -41,12 +59,11 @@ def _load_dotenv():
 
 
 @pytest.fixture(scope="session")
-def bucket(_load_dotenv):
-    base = os.environ.get("TEST_BUCKET_NAME")
-    if not base:
-        raise Exception("Cannot find env TEST_BUCKET_NAME")
+def bucket(_load_dotenv, bucket_name):
+    if not bucket_name:
+        raise Exception("Cannot find TranscribeBucketName")
     return Bucket(
-        base=base,
+        base=bucket_name,
         audio=f"audio",
         transcribed=f"transcribed",
         converted=f"converted",
