@@ -1,8 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: An AWS Serverless Application Model for transcribing audio to docx.
+Parameters:
+  TranscribeBucketName:
+    Type: String
+  MaxSpeakers:
+    Type: Number
 Resources:
-
   RunTranscriptionJob:
     Type: AWS::Serverless::Function
     Properties:
@@ -22,7 +26,7 @@ Resources:
       PackageType: Zip
       Environment:
         Variables:
-          MAX_SPEAKERS: 5
+          MAX_SPEAKERS: !Ref MaxSpeakers
 
   #     Policies:
   #       - Statement:
@@ -95,15 +99,10 @@ Resources:
   #     RuntimeManagementConfig:
   #       UpdateRuntimeOn: Auto
 
-  # Bucket1:
-  #   Type: AWS::S3::Bucket
-  #   Properties:
-  #     VersioningConfiguration:
-  #       Status: Enabled
-  #     BucketEncryption:
-  #       ServerSideEncryptionConfiguration:
-  #         - ServerSideEncryptionByDefault:
-  #             SSEAlgorithm: AES256
+  TranscribeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref TranscribeBucketName
 
   # BucketPolicy1:
   #   Type: AWS::S3::BucketPolicy

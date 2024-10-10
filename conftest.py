@@ -47,9 +47,9 @@ def bucket(_load_dotenv):
         raise Exception("Cannot find env TEST_BUCKET_NAME")
     return Bucket(
         base=base,
-        audio=f"/audio",
-        transcribed=f"/transcribed",
-        converted=f"/converted",
+        audio=f"audio",
+        transcribed=f"transcribed",
+        converted=f"converted",
     )
 
 
