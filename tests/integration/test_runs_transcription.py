@@ -26,8 +26,7 @@ def test_lambda_invoked(logs_client):
     # Wait for a few seconds to make sure the logs are available
     time.sleep(5)
 
-    # TODO: set log group name in template then set it here
-    logGroupName = "/aws/lambda/sam-transcribe-RunTranscriptionJob-toyvtDLvyhYE"
+    logGroupName = "/aws/lambda/sam-transcribe-RunTranscriptionJob"
 
     # Get the latest log stream for the specified log group
     log_streams = logs_client.describe_log_streams(

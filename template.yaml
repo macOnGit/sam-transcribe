@@ -16,6 +16,7 @@ Resources:
       Timeout: 15
       LoggingConfig:
         LogFormat: JSON
+        LogGroup: /aws/lambda/sam-transcribe-RunTranscriptionJob
       Handler: app.lambda_handler
       Runtime: python3.11
       Architectures: [x86_64]

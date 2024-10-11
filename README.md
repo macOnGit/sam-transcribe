@@ -14,6 +14,8 @@ Create a folder in the bucket using the command
 
 [logging in lambda](https://docs.aws.amazon.com/lambda/latest/dg/python-logging.html)
 
+[logging in cloudformation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-loggingconfig.html)
+
 # sam template
 
 [anatomy](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy.html)
