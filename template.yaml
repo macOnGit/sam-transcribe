@@ -12,14 +12,13 @@ Resources:
     Properties:
       CodeUri: functions/transcribe/
       Description: 'Runs a transcription job'
-      MemorySize: 128
-      Timeout: 3
+      MemorySize: 256
+      Timeout: 15
+      LoggingConfig:
+        LogFormat: JSON
       Handler: app.lambda_handler
       Runtime: python3.11
-      Architectures:
-        - x86_64
-      EphemeralStorage:
-        Size: 512
+      Architectures: [x86_64]
       EventInvokeConfig:
         MaximumEventAgeInSeconds: 21600
         MaximumRetryAttempts: 2
@@ -27,102 +26,33 @@ Resources:
       Environment:
         Variables:
           MAX_SPEAKERS: !Ref MaxSpeakers
-
-  #     Policies:
-  #       - Statement:
-  #           - Effect: Allow
-  #             Action:
-  #               - logs:CreateLogGroup
-  #             Resource: arn:aws:logs:us-east-1:<acct-no>:*
-  #           - Effect: Allow
-  #             Action:
-  #               - logs:CreateLogStream
-  #               - logs:PutLogEvents
-  #             Resource:
-  #               - >-
-  #                 arn:aws:logs:us-east-1:<acct-no>:log-group:/aws/lambda/mytranscribefunc:*
-  #           - Effect: Allow
-  #             Action:
-  #               - transcribe:*
-  #             Resource: '*'
-  #           - Effect: Allow
-  #             Action:
-  #               - s3:GetObject
-  #             Resource:
-  #               - arn:aws:s3:::*transcribe*
-  #           - Effect: Allow
-  #             Action:
-  #               - autoscaling:Describe*
-  #               - cloudwatch:*
-  #               - logs:*
-  #               - sns:*
-  #               - iam:GetPolicy
-  #               - iam:GetPolicyVersion
-  #               - iam:GetRole
-  #               - oam:ListSinks
-  #             Resource: '*'
-  #           - Effect: Allow
-  #             Action:
-  #               - iam:CreateServiceLinkedRole
-  #             Resource: >-
-  #               arn:aws:iam::*:role/aws-service-role/events.amazonaws.com/AWSServiceRoleForCloudWatchEvents*
-  #             Condition:
-  #               StringLike:
-  #                 iam:AWSServiceName: events.amazonaws.com
-  #           - Effect: Allow
-  #             Action:
-  #               - oam:ListAttachedLinks
-  #             Resource: arn:aws:oam:*:*:sink/*
-  #           - Effect: Allow
-  #             Action:
-  #               - s3:*
-  #               - s3-object-lambda:*
-  #             Resource: '*'
-  #     RecursiveLoop: Terminate
-  #     SnapStart:
-  #       ApplyOn: None
-  #     Events:
-  #       BucketEvent1:
-  #         Type: S3
-  #         Properties:
-  #           Bucket:
-  #             Ref: Bucket1
-  #           Events:
-  #             - s3:ObjectCreated:*
-  #           Filter:
-  #             S3Key:
-  #               Rules:
-  #                 - Name: prefix
-  #                   Value: audio/
-  #                 - Name: suffix
-  #                   Value: .m4a
-  #     RuntimeManagementConfig:
-  #       UpdateRuntimeOn: Auto
+      Policies:
+      # TODO: narrower policies
+        - AWSLambdaBasicExecutionRole
+        - AmazonTranscribeFullAccess
+        - AmazonS3FullAccess
+      Events:
+        AudioUploaded:
+          Type: S3
+          Properties:
+            Bucket: !Ref TranscribeBucket
+            Events:
+              - s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: audio/
 
   TranscribeBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref TranscribeBucketName
 
-  # BucketPolicy1:
-  #   Type: AWS::S3::BucketPolicy
-  #   Properties:
-  #     Bucket: Bucket1
-  #     PolicyDocument:
-  #       Statement:
-  #         - Action: s3:*
-  #           Effect: Deny
-  #           Principal: '*'
-  #           Resource:
-  #             - arn:aws:s3:::Bucket1/*
-  #             - arn:aws:s3:::Bucket1
-  #           Condition:
-  #             Bool:
-  #               aws:SecureTransport: false
-# Outputs:
-#   StockTradingStateMachineArn:
-#     Description: "Stock Trading State machine ARN"
-#     Value: !Ref StockTradingStateMachine
-#   StockTradingStateMachineRoleArn:
-#     Description: "IAM Role created for Stock Trading State machine based on the specified SAM Policy Templates"
-#     Value: !GetAtt StockTradingStateMachineRole.Arn
+Outputs:
+  RunTranscriptionJobArn:
+    Description: "Transcription Job runner ARN"
+    Value: !Ref RunTranscriptionJob
+  TranscribeBucketArn:
+    Description: "Bucket for transcriptions"
+    Value: !Ref TranscribeBucket
