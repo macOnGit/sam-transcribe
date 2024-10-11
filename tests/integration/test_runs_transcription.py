@@ -4,10 +4,10 @@ import time
 
 
 @pytest.mark.order(1)
-def test_source_bucket_audio_available(s3_client, bucket, file_names):
+def test_source_bucket_audio_available(s3_client, bucket, files_for_tests):
     s3_bucket_name = bucket.base
-    file_path = str(file_names.fixtures_path / file_names.audio)
-    prefixed_file_name = f"{bucket.audio}/{file_names.audio}"
+    file_path = str(files_for_tests.audio)
+    prefixed_file_name = f"{bucket.audio}/{files_for_tests.audio.name}"
 
     file_uploaded = False
 
@@ -26,9 +26,12 @@ def test_lambda_invoked(logs_client):
     # Wait for a few seconds to make sure the logs are available
     time.sleep(5)
 
+    # TODO: set log group name in template then set it here
+    logGroupName = "/aws/lambda/sam-transcribe-RunTranscriptionJob-toyvtDLvyhYE"
+
     # Get the latest log stream for the specified log group
     log_streams = logs_client.describe_log_streams(
-        logGroupName="/aws/lambda/RunTranscriptionJob",
+        logGroupName=logGroupName,
         orderBy="LastEventTime",
         descending=True,
         limit=1,
@@ -38,7 +41,7 @@ def test_lambda_invoked(logs_client):
 
     # Retrieve the log events from the latest log stream
     log_events = logs_client.get_log_events(
-        logGroupName=f"/aws/lambda/RunTranscriptionJob",
+        logGroupName=logGroupName,
         logStreamName=latest_log_stream_name,
     )
 

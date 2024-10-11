@@ -4,7 +4,11 @@
 
 [local event](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-local-generate-event.html)
 
+Invoke function locally using the command
 `sam local invoke --event events/audio_uploaded.json RunTranscriptionJob`
+
+Create a folder in the bucket using the command
+`aws s3api put-object --bucket bucket-name --key folder-name/ --content-length 0`
 
 # logging
 
