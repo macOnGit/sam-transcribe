@@ -4,6 +4,8 @@
 
 [local event](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-local-generate-event.html)
 
+audio file and json file required in fixtures/ to run tests
+
 Invoke function locally using the command
 `sam local invoke --event events/audio_uploaded.json RunTranscriptionJob`
 

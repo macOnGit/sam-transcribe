@@ -126,5 +126,6 @@ def cleanup(bucket, files_for_tests):
     s3_client.delete_object(Bucket=bucket.base, Key=bucket_key)
     print(f"\nDeleted {files_for_tests.audio} from {bucket.base}")
 
+    # TODO: create a lambda function which deletes completed files?
     # TODO: delete transcribed file
     # TODO: delete converted file
