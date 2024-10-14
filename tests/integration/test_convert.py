@@ -1,13 +1,13 @@
-import json
 import pytest
 import time
+import json
 
 
 @pytest.mark.order(1)
-def test_source_bucket_audio_available(s3_client, bucket, files_for_tests):
+def test_source_bucket_transcribe_available(s3_client, bucket, files_for_tests):
     s3_bucket_name = bucket.base
-    file_path = str(files_for_tests.audio)
-    prefixed_file_name = f"{bucket.audio}/{files_for_tests.audio.name}"
+    file_path = str(files_for_tests.transcribed)
+    prefixed_file_name = f"{bucket.transcribed}/{files_for_tests.transcribed.name}"
 
     file_uploaded = False
 
@@ -27,7 +27,7 @@ def test_lambda_invoked(logs_client):
     time.sleep(5)
 
     # TODO: can this not be hardcoded?
-    logGroupName = "/aws/lambda/sam-transcribe-RunTranscriptionJob"
+    logGroupName = "/aws/lambda/sam-transcribe-ConvertToDocx"
 
     # Get the latest log stream for the specified log group
     log_streams = logs_client.describe_log_streams(

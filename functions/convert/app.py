@@ -36,13 +36,17 @@ def lambda_handler(event, context):
     download_path = f"/tmp/{uuid.uuid4()}.json"
     # Create another path to save the encrypted file to
     upload_path = f"/tmp/converted-{uuid.uuid4()}.docx"
-    s3_client.download_file(bucket, key, download_path)
 
-    if not is_valid_json(download_path):
-        raise Exception("Not a valid JSON file")
+    try:
+        s3_client.download_file(bucket, key, download_path)
+        logger.info("file downloaded")
+    except ClientError as e:
+        logger.error(e)
+        return False
 
+    # TODO: need try/except around tscribe
     tscribe.write(download_path, save_as=upload_path)
-    new_key = get_new_key(docket, common_filename)
+    new_key = make_new_key(docket, common_filename)
     try:
         s3_client.upload_file(upload_path, bucket, new_key)
         logger.info("## DONE")
@@ -52,15 +56,7 @@ def lambda_handler(event, context):
     return True
 
 
-def is_valid_json(data):
-    try:
-        json.loads(data)
-        return True
-    except ValueError:
-        return False
-
-
-def get_new_key(docket, common_filename):
+def make_new_key(docket, common_filename):
     return f"converted/{docket} {common_filename}.docx"
 
 

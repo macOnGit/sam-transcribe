@@ -149,10 +149,16 @@ def cleanup(bucket, files_for_tests):
     # Cleanup code will be executed after all tests have finished
 
     # Delete test audio file from bucket
-    bucket_key = f"{bucket.audio}/{files_for_tests.audio}"
-    s3_client.delete_object(Bucket=bucket.base, Key=bucket_key)
+    transcribed_key = f"{bucket.audio}/{files_for_tests.audio}"
+    s3_client.delete_object(Bucket=bucket.base, Key=transcribed_key)
     print(f"\nDeleted {files_for_tests.audio} from {bucket.base}")
 
-    # TODO: create a lambda function which deletes completed files?
-    # TODO: delete transcribed file
+    # Delete test transcribed file from bucket
+    transcribed_key = f"{bucket.transcribed}/{files_for_tests.transcribed}"
+    s3_client.delete_object(Bucket=bucket.base, Key=transcribed_key)
+    print(f"\nDeleted {files_for_tests.transcribed} from {bucket.base}")
+
+    # TODO: delete generated transcribed file
     # TODO: delete converted file
+
+    # TODO: create a lambda function which deletes completed files?
