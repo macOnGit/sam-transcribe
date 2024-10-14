@@ -9,7 +9,7 @@ def test_gets_docket_from_filename(event):
     assert docket == "P12345-US01"
 
 
-def test_raises_without_tagline_env():
+def test_raises_without_common_filename_env():
     with pytest.raises(Exception) as err:
         app.lambda_handler({}, {})
-    assert "TAGLINE" in str(err.value)
+    assert "COMMON_FILENAME" in str(err.value)

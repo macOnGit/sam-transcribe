@@ -6,6 +6,7 @@ from urllib.parse import unquote_plus
 import json
 from pathlib import Path
 import boto3
+from botocore.exceptions import ClientError
 import tscribe
 
 
@@ -19,9 +20,9 @@ logger.setLevel("INFO")
 
 def lambda_handler(event, context):
 
-    tagline = os.environ.get("TAGLINE")
-    if not tagline:
-        raise Exception("Cannot find env TAGLINE")
+    common_filename = os.environ.get("COMMON_FILENAME")
+    if not common_filename:
+        raise Exception("Cannot find env COMMON_FILENAME")
 
     logger.info("## EVENT")
     logger.info(json.dumps(event, indent=2))
@@ -41,10 +42,14 @@ def lambda_handler(event, context):
         raise Exception("Not a valid JSON file")
 
     tscribe.write(download_path, save_as=upload_path)
-    new_key = get_new_key(docket, tagline)
-    s3_client.upload_file(upload_path, bucket, new_key)
-
-    logger.info("## DONE")
+    new_key = get_new_key(docket, common_filename)
+    try:
+        s3_client.upload_file(upload_path, bucket, new_key)
+        logger.info("## DONE")
+    except ClientError as e:
+        logger.error(e)
+        return False
+    return True
 
 
 def is_valid_json(data):
@@ -55,8 +60,8 @@ def is_valid_json(data):
         return False
 
 
-def get_new_key(docket, tagline):
-    return f"converted/{docket} {tagline}.docx"
+def get_new_key(docket, common_filename):
+    return f"converted/{docket} {common_filename}.docx"
 
 
 def get_docket(filename):
