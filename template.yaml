@@ -58,7 +58,7 @@ Resources:
       Timeout: 100
       LoggingConfig:
         LogFormat: JSON
-        LogGroup: /aws/lambda/sam-transcribe-ConverToDocx
+        LogGroup: /aws/lambda/sam-transcribe-ConvertToDocx
       Handler: app.lambda_handler
       Runtime: python3.11
       Architectures: [x86_64]
