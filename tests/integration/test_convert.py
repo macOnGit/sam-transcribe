@@ -1,5 +1,4 @@
 import pytest
-import time
 import json
 
 
@@ -21,33 +20,12 @@ def test_source_bucket_transcribe_available(s3_client, bucket, files_for_tests):
 
 
 @pytest.mark.order(2)
-def test_lambda_invoked(logs_client):
-    # TODO: dupe in test_transcribe
-
-    # Wait for a few seconds to make sure the logs are available
-    time.sleep(5)
-
-    # TODO: can this not be hardcoded?
-    logGroupName = "/aws/lambda/sam-transcribe-ConvertToDocx"
-
-    # Get the latest log stream for the specified log group
-    log_streams = logs_client.describe_log_streams(
-        logGroupName=logGroupName,
-        orderBy="LastEventTime",
-        descending=True,
-        limit=1,
-    )
-
-    latest_log_stream_name = log_streams["logStreams"][0]["logStreamName"]
-
-    # Retrieve the log events from the latest log stream
-    log_events = logs_client.get_log_events(
-        logGroupName=logGroupName,
-        logStreamName=latest_log_stream_name,
-    )
-
+@pytest.mark.parametrize(
+    "log_events", ["/aws/lambda/sam-transcribe-ConvertToDocx"], indirect=True
+)
+def test_lambda_invoked(log_events):
     success_found = False
-    for event in log_events["events"]:
+    for event in log_events:
         try:
             message = json.loads(event["message"])
         except json.decoder.JSONDecodeError:
