@@ -6,7 +6,7 @@
 
 [mock testing](https://docs.getmoto.org/en/latest/index.html)
 
-audio file and json file required in fixtures/ to run tests
+audio file and json file required in fixtures/ to run tests - use same docket number for both!
 
 Invoke function locally using the command
 `sam local invoke --event events/audio_uploaded.json RunTranscriptionJob`

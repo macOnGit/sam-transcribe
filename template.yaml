@@ -85,6 +85,8 @@ Resources:
                 Rules:
                   - Name: prefix
                     Value: transcribed/
+                  - Name: suffix
+                    Value: .json
 
   TranscribeBucket:
     Type: AWS::S3::Bucket

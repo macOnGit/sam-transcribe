@@ -19,6 +19,10 @@ class Bucket:
     transcribed: str
     converted: str
 
+    @property
+    def prefixes(self) -> list:
+        return [self.audio, self.transcribed, self.converted]
+
 
 @dataclass
 class FileNames:
@@ -74,13 +78,22 @@ def bucket(samconfig_params):
     # TODO: match AWS bucket naming rules
     match = re.search('TranscribeBucketName="([a-zA-Z0-9-]+)"', samconfig_params)
     if not match:
-        raise Exception("Could not find TranscribeBucketName")
+        raise Exception("Could not find TranscribeBucketName in samconfig")
     return Bucket(
         base=match.group(1),
         audio=f"audio",
         transcribed=f"transcribed",
         converted=f"converted",
     )
+
+
+@pytest.fixture(scope="session")
+def common_filename(samconfig_params):
+    # TODO: match AWS bucket naming rules
+    match = re.search('CommonFilename="([a-zA-Z0-9- ]+)"', samconfig_params)
+    if not match:
+        raise Exception("Could not find CommonFileName in samconfig")
+    return match
 
 
 @pytest.fixture(scope="session")
@@ -111,18 +124,35 @@ def json_file():
 
 
 @pytest.fixture(scope="session")
-def files_for_tests(audio_file, json_file):
+def test_docket_number(json_file):
+    valid_docket_type1 = re.compile(r"P\d+-\w{2}\d{2}", flags=re.IGNORECASE)
+    valid_docket_type2 = re.compile(r"\w{3}-\d{3}\w{2}\d{2}")
+    match = valid_docket_type1.search(json_file.stem) or valid_docket_type2.search(
+        json_file.stem
+    )
+    if match:
+        return match.group(0).upper()
+    else:
+        raise Exception(f"Could not find a valid docket number in: {json_file.stem}")
+
+
+@pytest.fixture(scope="session")
+def converted_file(test_docket_number, common_filename):
+    return f"{test_docket_number} {common_filename}.docx"
+
+
+@pytest.fixture(scope="session")
+def files_for_tests(audio_file, json_file, converted_file):
     if not audio_file:
         raise Exception("Could not find test audio file")
 
     if not json_file:
         raise Exception("Could not find test transcribed file")
 
-    converted = "audio_file name + tag line from converter"
-    if not converted:
-        raise Exception("Cannot find env TEST_CONVERTED_FILE_NAME")
+    if not converted_file:
+        raise Exception("Could not find name for test converted file")
 
-    return FileNames(audio=audio_file, transcribed=json_file, converted=converted)
+    return FileNames(audio=audio_file, transcribed=json_file, converted=converted_file)
 
 
 @pytest.fixture
@@ -147,18 +177,13 @@ def cleanup(bucket, files_for_tests):
 
     yield
     # Cleanup code will be executed after all tests have finished
+    for prefix in bucket.prefixes:
+        # e.g., the audio test file
+        filename = getattr(files_for_tests, prefix)
+        key = f"{prefix}/{filename}"
+        s3_client.delete_object(Bucket=bucket.base, Key=key)
+        print(f"\nDeleted {filename} from {bucket.base}")
 
-    # Delete test audio file from bucket
-    transcribed_key = f"{bucket.audio}/{files_for_tests.audio}"
-    s3_client.delete_object(Bucket=bucket.base, Key=transcribed_key)
-    print(f"\nDeleted {files_for_tests.audio} from {bucket.base}")
+    # TODO: to delete generated transcribed file, we'll need the uuid from the logstream
 
-    # Delete test transcribed file from bucket
-    transcribed_key = f"{bucket.transcribed}/{files_for_tests.transcribed}"
-    s3_client.delete_object(Bucket=bucket.base, Key=transcribed_key)
-    print(f"\nDeleted {files_for_tests.transcribed} from {bucket.base}")
-
-    # TODO: delete generated transcribed file
-    # TODO: delete converted file
-
-    # TODO: create a lambda function which deletes completed files?
+    # TODO: create a lambda function which deletes completed files and sends emails
