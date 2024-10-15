@@ -22,6 +22,7 @@ def test_source_bucket_transcribe_available(s3_client, bucket, files_for_tests):
 
 @pytest.mark.order(2)
 def test_lambda_invoked(logs_client):
+    # TODO: dupe in test_transcribe
 
     # Wait for a few seconds to make sure the logs are available
     time.sleep(5)
@@ -47,7 +48,10 @@ def test_lambda_invoked(logs_client):
 
     success_found = False
     for event in log_events["events"]:
-        message = json.loads(event["message"])
+        try:
+            message = json.loads(event["message"])
+        except json.decoder.JSONDecodeError:
+            continue
         status = message.get("record", {}).get("status")
         if status == "success":
             success_found = True

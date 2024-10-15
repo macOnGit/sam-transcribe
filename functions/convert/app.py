@@ -1,6 +1,8 @@
 import re
 import uuid
 import os
+import io
+from contextlib import redirect_stdout
 import logging
 from urllib.parse import unquote_plus
 import json
@@ -44,12 +46,18 @@ def lambda_handler(event, context):
         logger.error(e)
         return False
 
-    # TODO: need try/except around tscribe
-    tscribe.write(download_path, save_as=upload_path)
+    with io.StringIO() as buf, redirect_stdout(buf):
+        try:
+            tscribe.write(download_path, save_as=upload_path)
+        except Exception as e:
+            raise Exception(f"Failed to create docx: {str(e)}")
+        output = buf.getvalue()
+
     new_key = make_new_key(docket, common_filename)
     try:
         s3_client.upload_file(upload_path, bucket, new_key)
         logger.info("## DONE")
+        logger.info(output)
     except ClientError as e:
         logger.error(e)
         return False
