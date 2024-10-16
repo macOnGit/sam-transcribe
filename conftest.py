@@ -96,7 +96,7 @@ def common_filename(samconfig_params):
     match = re.search('CommonFilename="([ a-zA-Z0-9!_.*\'()-]+)"', samconfig_params)
     if not match:
         raise Exception("Could not find CommonFileName in samconfig")
-    return match
+    return match.group(1)
 
 
 @pytest.fixture(scope="session")
@@ -199,19 +199,24 @@ def log_events(request, logs_client):
 
 
 @pytest.fixture(scope="session")
-def cleanup(bucket, files_for_tests):
+def cleanup(bucket, files_for_tests, test_docket_number):
     # Create a new S3 client for cleanup
     s3_client = boto3.client("s3")
+    transcribe = boto3.client("transcribe")
 
     yield
     # Cleanup code will be executed after all tests have finished
     for prefix in bucket.prefixes:
-        # e.g., the audio test file
+        # e.g., the audio test file in fixtures
         filename = getattr(files_for_tests, prefix)
         key = f"{prefix}/{filename}"
         s3_client.delete_object(Bucket=bucket.base, Key=key)
         print(f"\nDeleted {filename} from {bucket.base}")
-
-    # TODO: to delete generated transcribed file, we'll need the uuid from the logstream
-
-    # TODO: create a lambda function which deletes completed files and sends emails
+    # Delete generated transcribed file, which is not same file as the uploaded one
+    s3_client.delete_object(
+        Bucket=bucket.base, Key=f"{bucket.transcribed}/{test_docket_number}.json"
+    )
+    # Delete transcribe job
+    transcribe.delete_transcription_job(
+        TranscriptionJobName=f"audiotojson-{test_docket_number}"
+    )

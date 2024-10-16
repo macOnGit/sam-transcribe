@@ -1,7 +1,6 @@
 import logging
 import json
 import boto3
-import uuid
 from pathlib import Path
 import re
 import os
@@ -27,14 +26,13 @@ def lambda_handler(event, context):
     filename = event["Records"][0]["s3"]["object"]["key"]
     bucketname = event["Records"][0]["s3"]["bucket"]["name"]
     url = f"s3://{bucketname}/{filename}"
-    myuuid = str(uuid.uuid1().int)
     # The final path component, without its suffix
     save_as_filename = get_docket(filename)
     # The suffix
     media_format = get_media_format(filename)
 
     response = transcribe.start_transcription_job(
-        TranscriptionJobName=f"audiotojson-{myuuid}",
+        TranscriptionJobName=f"audiotojson-{save_as_filename}",
         LanguageCode="en-US",
         MediaFormat=media_format,
         Media={"MediaFileUri": url},
@@ -43,7 +41,7 @@ def lambda_handler(event, context):
             "MaxSpeakerLabels": int(max_speakers),
         },
         OutputBucketName=bucketname,
-        OutputKey=f"transcribed/{save_as_filename}-{myuuid}.json",
+        OutputKey=f"transcribed/{save_as_filename}.json",
     )
 
     logger.info("## RESPONSE")
