@@ -1,5 +1,16 @@
 # sam-transcribe
 
+## Buckets
+
+Bucket name must conform to AWS S3 bucket naming [rules](https://stackoverflow.com/a/50484916)
+
+`^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$`
+
+Common File Name (e.g., "- Call transcript") must conform to AWS S3 object naming
+[rules](https://stackoverflow.com/a/58713447) but without forward slashes and spaces are allowed
+
+`^[ a-zA-Z0-9!_.*\'()-]+$`
+
 ## Testing
 
 [local event](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-local-generate-event.html)

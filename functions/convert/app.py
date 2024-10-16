@@ -13,7 +13,6 @@ import tscribe
 
 
 s3_client = boto3.client("s3")
-# TODO: pattern(s) could be passed in
 valid_docket_type1 = re.compile(r"P\d+-\w{2}\d{2}", flags=re.IGNORECASE)
 valid_docket_type2 = re.compile(r"\w{3}-\d{3}\w{2}\d{2}")
 logger = logging.getLogger()

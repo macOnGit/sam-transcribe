@@ -54,8 +54,7 @@ Resources:
       CodeUri: functions/convert/
       Description: 'Converts a transcribed JSON file into docx'
       MemorySize: 256
-      # TODO: param for timeout?
-      Timeout: 100
+      Timeout: 120
       LoggingConfig:
         LogFormat: JSON
         LogGroup: /aws/lambda/sam-transcribe-ConvertToDocx

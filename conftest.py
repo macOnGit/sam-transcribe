@@ -76,8 +76,11 @@ def samconfig_params():
 
 @pytest.fixture(scope="session")
 def bucket(samconfig_params):
-    # TODO: match AWS bucket naming rules
-    match = re.search('TranscribeBucketName="([a-zA-Z0-9-]+)"', samconfig_params)
+    match = re.search(
+        'TranscribeBucketName="((?!(^xn--|.+-s3alias$))[a-z0-9][a-z0-9-]{1,61}[a-z0-9])"',
+        samconfig_params,
+    )
+
     if not match:
         raise Exception("Could not find TranscribeBucketName in samconfig")
     return Bucket(
@@ -90,8 +93,7 @@ def bucket(samconfig_params):
 
 @pytest.fixture(scope="session")
 def common_filename(samconfig_params):
-    # TODO: match AWS bucket naming rules
-    match = re.search('CommonFilename="([a-zA-Z0-9- ]+)"', samconfig_params)
+    match = re.search('CommonFilename="([ a-zA-Z0-9!_.*\'()-]+)"', samconfig_params)
     if not match:
         raise Exception("Could not find CommonFileName in samconfig")
     return match
