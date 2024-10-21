@@ -30,9 +30,16 @@ def lambda_handler(event, context):
     save_as_filename = get_docket(filename)
     # The suffix
     media_format = get_media_format(filename)
+    transcription_job_name = (f"audiotojson-{save_as_filename}",)
+
+    try:
+        transcribe.delete_transcription_job(TranscriptionJobName=transcription_job_name)
+        logger.info(f"Deleted previous transcription job: {transcription_job_name}")
+    except Exception:
+        pass
 
     response = transcribe.start_transcription_job(
-        TranscriptionJobName=f"audiotojson-{save_as_filename}",
+        TranscriptionJobName=transcription_job_name,
         LanguageCode="en-US",
         MediaFormat=media_format,
         Media={"MediaFileUri": url},

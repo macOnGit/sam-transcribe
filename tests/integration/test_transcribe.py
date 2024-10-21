@@ -26,7 +26,11 @@ def test_source_bucket_audio_available(s3_client, bucket, files_for_tests):
 def test_lambda_invoked(log_events):
     success_found = False
     for event in log_events:
-        message = json.loads(event["message"])
+        try:
+            message = json.loads(event["message"])
+        except json.JSONDecodeError as err:
+            print(str(err))
+            break
         status = message.get("record", {}).get("status")
         if status == "success":
             success_found = True

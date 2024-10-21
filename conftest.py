@@ -1,4 +1,5 @@
 import pytest
+import pprint
 import json
 from pathlib import Path
 from dataclasses import dataclass
@@ -30,6 +31,8 @@ class FileNames:
     audio: str
     transcribed: str
     converted: str
+    generated_transcription: str
+    transcription_job_name: str
 
 
 @pytest.fixture(scope="function")
@@ -145,7 +148,7 @@ def converted_file(test_docket_number, common_filename):
 
 
 @pytest.fixture(scope="session")
-def files_for_tests(audio_file, json_file, converted_file):
+def files_for_tests(audio_file, json_file, converted_file, test_docket_number):
     if not audio_file:
         raise Exception("Could not find test audio file")
 
@@ -155,7 +158,13 @@ def files_for_tests(audio_file, json_file, converted_file):
     if not converted_file:
         raise Exception("Could not find name for test converted file")
 
-    return FileNames(audio=audio_file, transcribed=json_file, converted=converted_file)
+    return FileNames(
+        audio=audio_file,
+        transcribed=json_file,
+        converted=converted_file,
+        generated_transcription=f"{test_docket_number}.json",
+        transcription_job_name=f"audiotojson-{test_docket_number}",
+    )
 
 
 @pytest.fixture
@@ -177,7 +186,8 @@ def logs_client():
 def log_events(request, logs_client):
     logGroupName = request.param
     # Wait for a few seconds to make sure the logs are available
-    time.sleep(5)
+    # TODO: need a way to poll logs
+    time.sleep(10)
 
     # Get the latest log stream for the specified log group
     log_streams = logs_client.describe_log_streams(
@@ -198,25 +208,41 @@ def log_events(request, logs_client):
     return log_events["events"]
 
 
-@pytest.fixture(scope="session")
-def cleanup(bucket, files_for_tests, test_docket_number):
+@pytest.fixture(scope="module")
+def cleanup(bucket, files_for_tests):
     # Create a new S3 client for cleanup
     s3_client = boto3.client("s3")
     transcribe = boto3.client("transcribe")
 
     yield
     # Cleanup code will be executed after all tests have finished
-    for prefix in bucket.prefixes:
-        # e.g., the audio test file in fixtures
-        filename = getattr(files_for_tests, prefix)
-        key = f"{prefix}/{filename}"
-        s3_client.delete_object(Bucket=bucket.base, Key=key)
-        print(f"\nDeleted {filename} from {bucket.base}")
-    # Delete generated transcribed file, which is not same file as the uploaded one
-    s3_client.delete_object(
-        Bucket=bucket.base, Key=f"{bucket.transcribed}/{test_docket_number}.json"
+
+    response = s3_client.delete_objects(
+        Bucket=bucket.base,
+        Delete={
+            "Objects": [
+                {
+                    # Delete uploaded audio file
+                    "Key": f"{bucket.audio}/{files_for_tests.audio.name}",
+                    # Delete uploaded transcribed file
+                    "Key": f"{bucket.transcribed}/{files_for_tests.transcribed.name}",
+                    # Delete generated transcribed file
+                    "Key": f"{bucket.transcribed}/{files_for_tests.generated_transcription}",
+                    # Delete generated converted file
+                    "Key": f"{bucket.converted}/{files_for_tests.converted}",
+                }
+            ]
+        },
     )
+
+    print("Response:")
+    pprint.pp(response, indent=2)
+
     # Delete transcribe job
-    transcribe.delete_transcription_job(
-        TranscriptionJobName=f"audiotojson-{test_docket_number}"
-    )
+    try:
+        transcribe.delete_transcription_job(
+            TranscriptionJobName=files_for_tests.transcription_job_name
+        )
+        print(f"Deleted transcription job: {files_for_tests.transcription_job_name}")
+    except Exception as e:
+        print(f"Could not delete transcription job: {str(e)}")

@@ -11,6 +11,8 @@ Common File Name (e.g., "- Call transcript") must conform to AWS S3 object namin
 
 `^[ a-zA-Z0-9!_.*\'()-]+$`
 
+Previous transcribe job of same name will be deleted
+
 ## Testing
 
 [local event](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-local-generate-event.html)
@@ -18,6 +20,8 @@ Common File Name (e.g., "- Call transcript") must conform to AWS S3 object namin
 [mock testing](https://docs.getmoto.org/en/latest/index.html)
 
 audio file and json file required in fixtures/ to run tests - use same docket number for both!
+
+NOTE: a file with the same key will overwrite the old in a bucket
 
 Invoke function locally using the command
 `sam local invoke --event events/audio_uploaded.json RunTranscriptionJob`

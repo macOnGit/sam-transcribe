@@ -4,14 +4,13 @@ import json
 
 @pytest.mark.order(1)
 def test_source_bucket_transcribe_available(s3_client, bucket, files_for_tests):
-    s3_bucket_name = bucket.base
     file_path = str(files_for_tests.transcribed)
     prefixed_file_name = f"{bucket.transcribed}/{files_for_tests.transcribed.name}"
 
     file_uploaded = False
 
     try:
-        s3_client.upload_file(file_path, s3_bucket_name, prefixed_file_name)
+        s3_client.upload_file(file_path, bucket.base, prefixed_file_name)
         file_uploaded = True
     except Exception as err:
         print(str(err))
