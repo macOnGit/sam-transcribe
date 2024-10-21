@@ -1,5 +1,7 @@
 # sam-transcribe
 
+Previous transcribe job of same name will be deleted to avoid conflict
+
 ## Buckets
 
 Bucket name must conform to AWS S3 bucket naming [rules](https://stackoverflow.com/a/50484916)
@@ -10,8 +12,6 @@ Common File Name (e.g., "- Call transcript") must conform to AWS S3 object namin
 [rules](https://stackoverflow.com/a/58713447) but without forward slashes and spaces are allowed
 
 `^[ a-zA-Z0-9!_.*\'()-]+$`
-
-Previous transcribe job of same name will be deleted
 
 ## Testing
 
