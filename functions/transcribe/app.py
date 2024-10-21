@@ -30,7 +30,7 @@ def lambda_handler(event, context):
     save_as_filename = get_docket(filename)
     # The suffix
     media_format = get_media_format(filename)
-    transcription_job_name = (f"audiotojson-{save_as_filename}",)
+    transcription_job_name = f"audiotojson-{save_as_filename}"
 
     try:
         transcribe.delete_transcription_job(TranscriptionJobName=transcription_job_name)
