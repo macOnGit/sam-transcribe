@@ -32,11 +32,7 @@ def lambda_handler(event, context):
     media_format = get_media_format(filename)
     transcription_job_name = f"audiotojson-{save_as_filename}"
 
-    try:
-        transcribe.delete_transcription_job(TranscriptionJobName=transcription_job_name)
-        logger.info(f"Deleted previous transcription job: {transcription_job_name}")
-    except Exception:
-        pass
+    del_previous_job(transcription_job_name)
 
     response = transcribe.start_transcription_job(
         TranscriptionJobName=transcription_job_name,
@@ -62,6 +58,14 @@ def get_docket(filename):
         return match.group(0).upper()
     else:
         raise Exception(f"Could not find a valid docket number in: {path.stem}")
+
+
+def del_previous_job(transcription_job_name):
+    try:
+        transcribe.delete_transcription_job(TranscriptionJobName=transcription_job_name)
+        logger.info(f"Deleted previous transcription job: {transcription_job_name}")
+    except Exception:
+        pass
 
 
 def get_media_format(filename):
