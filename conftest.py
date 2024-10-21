@@ -182,32 +182,6 @@ def logs_client():
     return boto3.client("logs")
 
 
-@pytest.fixture
-def log_events(request, logs_client):
-    logGroupName = request.param
-    # Wait for a few seconds to make sure the logs are available
-    # TODO: need a way to poll logs
-    time.sleep(10)
-
-    # Get the latest log stream for the specified log group
-    log_streams = logs_client.describe_log_streams(
-        logGroupName=logGroupName,
-        orderBy="LastEventTime",
-        descending=True,
-        limit=1,
-    )
-
-    latest_log_stream_name = log_streams["logStreams"][0]["logStreamName"]
-
-    # Retrieve the log events from the latest log stream
-    log_events = logs_client.get_log_events(
-        logGroupName=logGroupName,
-        logStreamName=latest_log_stream_name,
-    )
-
-    return log_events["events"]
-
-
 @pytest.fixture(scope="module")
 def cleanup(bucket, files_for_tests):
     # Create a new S3 client for cleanup
@@ -216,6 +190,7 @@ def cleanup(bucket, files_for_tests):
 
     yield
     # Cleanup code will be executed after all tests have finished
+    # TODO: loop with wait
 
     response = s3_client.delete_objects(
         Bucket=bucket.base,
