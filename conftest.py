@@ -182,42 +182,70 @@ def logs_client():
     return boto3.client("logs")
 
 
-@pytest.fixture(scope="module")
-def cleanup(bucket, files_for_tests):
+@pytest.fixture(scope="session")
+def s3_objects_to_delete(bucket, files_for_tests):
+    return [
+        {
+            # Delete uploaded audio file
+            "Key": f"{bucket.audio}/{files_for_tests.audio.name}"
+        },
+        {
+            # Delete uploaded transcribed file
+            "Key": f"{bucket.transcribed}/{files_for_tests.transcribed.name}"
+        },
+        {
+            # Delete generated transcribed file
+            "Key": f"{bucket.transcribed}/{files_for_tests.generated_transcription}"
+        },
+        {
+            # Delete generated converted file
+            "Key": f"{bucket.converted}/{files_for_tests.converted}"
+        },
+    ]
+
+
+@pytest.fixture(scope="session")
+def cleanup(bucket, files_for_tests, s3_objects_to_delete):
     # Create a new S3 client for cleanup
     s3_client = boto3.client("s3")
     transcribe = boto3.client("transcribe")
 
     yield
     # Cleanup code will be executed after all tests have finished
-    # TODO: loop with wait
+    max_del_attempts = 10
+    objs_deleted = 0
+    obj_del_attempts = 0
+    job_del_attempts = 0
 
-    response = s3_client.delete_objects(
-        Bucket=bucket.base,
-        Delete={
-            "Objects": [
-                {
-                    # Delete uploaded audio file
-                    "Key": f"{bucket.audio}/{files_for_tests.audio.name}",
-                    # Delete uploaded transcribed file
-                    "Key": f"{bucket.transcribed}/{files_for_tests.transcribed.name}",
-                    # Delete generated transcribed file
-                    "Key": f"{bucket.transcribed}/{files_for_tests.generated_transcription}",
-                    # Delete generated converted file
-                    "Key": f"{bucket.converted}/{files_for_tests.converted}",
-                }
-            ]
-        },
-    )
-
-    print("Response:")
-    pprint.pp(response, indent=2)
-
-    # Delete transcribe job
-    try:
-        transcribe.delete_transcription_job(
-            TranscriptionJobName=files_for_tests.transcription_job_name
+    while True:
+        response = s3_client.delete_objects(
+            Bucket=bucket.base,
+            Delete={"Objects": s3_objects_to_delete},
         )
-        print(f"Deleted transcription job: {files_for_tests.transcription_job_name}")
-    except Exception as e:
-        print(f"Could not delete transcription job: {str(e)}")
+        print("Response:")
+        pprint.pp(response, indent=2)
+        objs_deleted += len(response["Deleted"])
+        if objs_deleted == len(s3_objects_to_delete):
+            break
+        if obj_del_attempts >= max_del_attempts:
+            raise Exception("Could not delete all objects from bucket")
+        obj_del_attempts += 1
+        time.sleep(1)
+
+    error = None
+
+    while True:
+        try:
+            transcribe.delete_transcription_job(
+                TranscriptionJobName=files_for_tests.transcription_job_name
+            )
+            print(
+                f"Deleted transcription job: {files_for_tests.transcription_job_name}"
+            )
+            break
+        except Exception as e:
+            error = e
+            job_del_attempts += 1
+        if job_del_attempts >= max_del_attempts:
+            raise Exception(f"Could not delete transcription job: {str(error)}")
+        time.sleep(1)
