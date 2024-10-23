@@ -26,6 +26,9 @@ NOTE: a file with the same key will overwrite the old in a bucket
 Invoke function locally using the command
 `sam local invoke --event events/audio_uploaded.json RunTranscriptionJob`
 
+Testing framework is [pytest](https://docs.pytest.org/en/stable/index.html) +
+[pytest-order](https://pypi.org/project/pytest-order/)
+
 ## useful commands
 
 Create a folder in the bucket using the command
