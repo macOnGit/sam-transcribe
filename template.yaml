@@ -8,9 +8,6 @@ Parameters:
     Type: Number
   CommonFilename:
     Type: String
-    # TODO: cleanup after job finished env
-    # TODO: create a lambda function which deletes audio, json, and transcription job
-    # TODO: send done email
 
 Resources:
   RunTranscriptionJob:
@@ -94,6 +91,11 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref TranscribeBucketName
+      LifecycleConfiguration:
+        Rules:
+          # TODO: configurable expiration
+          - ExpirationInDays: 5
+            Status: Enabled
 
 Outputs:
   RunTranscriptionJobArn:
