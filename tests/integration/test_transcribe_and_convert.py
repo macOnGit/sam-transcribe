@@ -17,7 +17,9 @@ def test_docx_in_bucket(s3_client, bucket, files_for_tests):
 
     # Specify the destination S3 bucket and the expected converted file key
     destination_bucket = bucket.base
-    prefixed_converted_file_name = f"{bucket.converted}/{files_for_tests.converted}"
+    prefixed_converted_file_name = (
+        f"{bucket.converted}/{files_for_tests.generated_converted}"
+    )
 
     while True:
         try:
@@ -36,6 +38,6 @@ def test_docx_in_bucket(s3_client, bucket, files_for_tests):
             time.sleep(1)
 
 
-def test_cleanup(cleanup):
+def test_cleanup(cleanup_test_files):
     # This test uses the cleanup fixture and will be executed last
     pass

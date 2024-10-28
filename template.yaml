@@ -95,6 +95,7 @@ Resources:
         Rules:
           # TODO: configurable expiration
           - ExpirationInDays: 5
+            Id: ExpirationRule
             Status: Enabled
 
 Outputs:

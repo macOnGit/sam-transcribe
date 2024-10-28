@@ -12,6 +12,8 @@ from moto import mock_aws
 
 
 base_path = Path(__file__).parent
+MAX_WAIT = 5
+MAX_DEL_ATTEMPTS = 45
 
 
 @dataclass
@@ -31,6 +33,7 @@ class FileNames:
     audio: str
     transcribed: str
     converted: str
+    generated_converted: str
     generated_transcription: str
     transcription_job_name: str
 
@@ -143,25 +146,36 @@ def test_docket_number(json_file):
 
 
 @pytest.fixture(scope="session")
-def converted_file(test_docket_number, common_filename):
-    return f"{test_docket_number} {common_filename}.docx"
+def docx_file():
+    # return first docx file found in folder
+    fixtures_path = base_path / "fixtures"
+    for child in fixtures_path.iterdir():
+        if child.suffix == ".docx":
+            return child
 
 
 @pytest.fixture(scope="session")
-def files_for_tests(audio_file, json_file, converted_file, test_docket_number):
+def files_for_tests(
+    audio_file,
+    json_file,
+    docx_file,
+    test_docket_number,
+    common_filename,
+):
     if not audio_file:
         raise Exception("Could not find test audio file")
 
     if not json_file:
         raise Exception("Could not find test transcribed file")
 
-    if not converted_file:
-        raise Exception("Could not find name for test converted file")
+    if not docx_file:
+        raise Exception("Could not find test converted file")
 
     return FileNames(
         audio=audio_file,
         transcribed=json_file,
-        converted=converted_file,
+        converted=docx_file,
+        generated_converted=f"{test_docket_number} {common_filename}.docx",
         generated_transcription=f"{test_docket_number}.json",
         transcription_job_name=f"audiotojson-{test_docket_number}",
     )
@@ -182,6 +196,58 @@ def logs_client():
     return boto3.client("logs")
 
 
+@pytest.fixture
+def log_client_func(logs_client, request):
+    logGroupName = request.param
+
+    def inner_func():
+
+        start_time = time.time()
+
+        while True:
+            # Get the latest log stream for the specified log group
+            try:
+                log_streams = logs_client.describe_log_streams(
+                    logGroupName=logGroupName,
+                    orderBy="LastEventTime",
+                    descending=True,
+                    limit=1,
+                )
+            except logs_client.exceptions.ResourceNotFoundException:
+                continue
+
+            latest_log_stream_name = log_streams["logStreams"][0]["logStreamName"]
+            # Retrieve the log events from the latest log stream
+            log_events = logs_client.get_log_events(
+                logGroupName=logGroupName,
+                logStreamName=latest_log_stream_name,
+            )
+
+            # Check the log events
+            success_found = False
+            for event in log_events["events"]:
+                try:
+                    message = json.loads(event["message"])
+                except json.decoder.JSONDecodeError:
+                    continue
+                status = message.get("record", {}).get("status")
+                if status == "success":
+                    success_found = True
+                    break
+
+            try:
+                assert (
+                    success_found
+                ), "Lambda function execution did not report 'success' status in logs."
+                break
+            except AssertionError as e:
+                if time.time() - start_time > MAX_WAIT:
+                    raise e
+                time.sleep(1)
+
+    return inner_func
+
+
 @pytest.fixture(scope="session")
 def s3_objects_to_delete(bucket, files_for_tests):
     return [
@@ -194,44 +260,27 @@ def s3_objects_to_delete(bucket, files_for_tests):
             "Key": f"{bucket.transcribed}/{files_for_tests.transcribed.name}"
         },
         {
+            # Delete uploaded converted file
+            "Key": f"{bucket.converted}/{files_for_tests.converted.name}"
+        },
+        {
             # Delete generated transcribed file
             "Key": f"{bucket.transcribed}/{files_for_tests.generated_transcription}"
         },
         {
             # Delete generated converted file
-            "Key": f"{bucket.converted}/{files_for_tests.converted}"
+            "Key": f"{bucket.converted}/{files_for_tests.generated_converted}"
         },
     ]
 
 
 @pytest.fixture(scope="session")
-def cleanup(bucket, files_for_tests, s3_objects_to_delete):
-    # Create a new S3 client for cleanup
-    s3_client = boto3.client("s3")
+def delete_test_job(files_for_tests):
     transcribe = boto3.client("transcribe")
 
     yield
     # Cleanup code will be executed after all tests have finished
-    max_del_attempts = 10
-    objs_deleted = 0
-    obj_del_attempts = 0
     job_del_attempts = 0
-
-    while True:
-        response = s3_client.delete_objects(
-            Bucket=bucket.base,
-            Delete={"Objects": s3_objects_to_delete},
-        )
-        print("Response:")
-        pprint.pp(response, indent=2)
-        objs_deleted += len(response["Deleted"])
-        if objs_deleted == len(s3_objects_to_delete):
-            break
-        if obj_del_attempts >= max_del_attempts:
-            raise Exception("Could not delete all objects from bucket")
-        obj_del_attempts += 1
-        time.sleep(1)
-
     error = None
 
     while True:
@@ -246,6 +295,32 @@ def cleanup(bucket, files_for_tests, s3_objects_to_delete):
         except Exception as e:
             error = e
             job_del_attempts += 1
-        if job_del_attempts >= max_del_attempts:
+        if job_del_attempts >= MAX_DEL_ATTEMPTS:
             raise Exception(f"Could not delete transcription job: {str(error)}")
+        time.sleep(1)
+
+
+@pytest.fixture(scope="session")
+def cleanup_test_files(bucket, s3_objects_to_delete):
+    # Create a new S3 client for cleanup
+    s3_client = boto3.client("s3")
+
+    yield
+    # Cleanup code will be executed after all tests have finished
+    objs_deleted = 0
+    obj_del_attempts = 0
+
+    while True:
+        response = s3_client.delete_objects(
+            Bucket=bucket.base,
+            Delete={"Objects": s3_objects_to_delete},
+        )
+        print("Response:")
+        pprint.pp(response, indent=2)
+        objs_deleted += len(response["Deleted"])
+        if objs_deleted == len(s3_objects_to_delete):
+            break
+        if obj_del_attempts >= MAX_DEL_ATTEMPTS:
+            raise Exception("Could not delete all objects from bucket")
+        obj_del_attempts += 1
         time.sleep(1)
