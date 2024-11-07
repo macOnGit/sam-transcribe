@@ -21,6 +21,8 @@ logger.setLevel("INFO")
 
 def lambda_handler(event, context):
 
+    os.environ.setdefault("MPLCONFIGDIR", f"/tmp/matplotlib-{uuid.uuid4()}")
+
     common_filename = os.environ.get("COMMON_FILENAME")
     if not common_filename:
         raise Exception("Cannot find env COMMON_FILENAME")
