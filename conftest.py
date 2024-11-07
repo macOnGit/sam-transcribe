@@ -19,13 +19,12 @@ MAX_DEL_ATTEMPTS = 45
 @dataclass
 class Bucket:
     base: str
-    audio: str
     transcribed: str
     converted: str
 
     @property
     def prefixes(self) -> list:
-        return [self.audio, self.transcribed, self.converted]
+        return [self.transcribed, self.converted]
 
 
 @dataclass
@@ -91,7 +90,6 @@ def bucket(samconfig_params):
         raise Exception("Could not find TranscribeBucketName in samconfig")
     return Bucket(
         base=match.group(1),
-        audio=f"audio",
         transcribed=f"transcribed",
         converted=f"converted",
     )
@@ -253,7 +251,7 @@ def s3_objects_to_delete(bucket, files_for_tests):
     return [
         {
             # Delete uploaded audio file
-            "Key": f"{bucket.audio}/{files_for_tests.audio.name}"
+            "Key": files_for_tests.audio.name
         },
         {
             # Delete uploaded transcribed file

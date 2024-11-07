@@ -5,12 +5,12 @@ import pytest
 def test_file_upload(s3_client, bucket, files_for_tests):
     s3_bucket_name = bucket.base
     file_path = str(files_for_tests.audio)
-    prefixed_file_name = f"{bucket.audio}/{files_for_tests.audio.name}"
+    filename = files_for_tests.audio.name
 
     file_uploaded = False
 
     try:
-        s3_client.upload_file(file_path, s3_bucket_name, prefixed_file_name)
+        s3_client.upload_file(file_path, s3_bucket_name, filename)
         file_uploaded = True
     except Exception as err:
         print(str(err))

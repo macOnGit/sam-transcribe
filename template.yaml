@@ -45,8 +45,22 @@ Resources:
             Filter:
               S3Key:
                 Rules:
-                  - Name: prefix
-                    Value: audio/
+                  - Name: suffix
+                    Value: .amr
+                  - Name: suffix
+                    Value: .flac
+                  - Name: suffix
+                    Value: .m4a
+                  - Name: suffix
+                    Value: .mp3
+                  - Name: suffix
+                    Value: .mp4
+                  - Name: suffix
+                    Value: .ogg
+                  - Name: suffix
+                    Value: .webm
+                  - Name: suffix
+                    Value: .wav
 
   ConvertToDocx:
     Type: AWS::Serverless::Function

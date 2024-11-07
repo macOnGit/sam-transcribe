@@ -9,8 +9,8 @@ def test_docx_in_bucket(s3_client, bucket, files_for_tests):
 
     # Upload audio file
     file_path = str(files_for_tests.audio)
-    prefixed_audio_file_name = f"{bucket.audio}/{files_for_tests.audio.name}"
-    s3_client.upload_file(file_path, bucket.base, prefixed_audio_file_name)
+    audio_file_name = files_for_tests.audio.name
+    s3_client.upload_file(file_path, bucket.base, audio_file_name)
 
     # Give it time to work
     time.sleep(5)
