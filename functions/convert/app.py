@@ -26,6 +26,9 @@ def lambda_handler(event, context):
     common_filename = os.environ.get("COMMON_FILENAME")
     if not common_filename:
         raise Exception("Cannot find env COMMON_FILENAME")
+    upload_bucket = os.environ.get("TRANSCRIBE_BUCKET_NAME")
+    if not upload_bucket:
+        raise Exception("Cannot find env TRANSCRIBE_BUCKET_NAME")
 
     logger.info("## EVENT")
     logger.info(json.dumps(event, indent=2))
@@ -34,14 +37,14 @@ def lambda_handler(event, context):
     key = unquote_plus(event["Records"][0]["s3"]["object"]["key"])
     # Docket only
     docket = get_docket(key)
-    bucket = event["Records"][0]["s3"]["bucket"]["name"]
+    download_bucket = event["Records"][0]["s3"]["bucket"]["name"]
     # Create a path in the Lambda tmp directory to save the file to
     download_path = f"/tmp/{uuid.uuid4()}.json"
     # Create another path to save the encrypted file to
     upload_path = f"/tmp/converted-{uuid.uuid4()}.docx"
 
     try:
-        s3_client.download_file(bucket, key, download_path)
+        s3_client.download_file(download_bucket, key, download_path)
         logger.info("file downloaded")
     except ClientError as e:
         logger.error(e)
@@ -56,7 +59,7 @@ def lambda_handler(event, context):
 
     new_key = make_new_key(docket, common_filename)
     try:
-        s3_client.upload_file(upload_path, bucket, new_key)
+        s3_client.upload_file(upload_path, upload_bucket, new_key)
         logger.info("## DONE")
         logger.info(output)
     except ClientError as e:
