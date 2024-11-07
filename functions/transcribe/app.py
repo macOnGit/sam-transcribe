@@ -71,14 +71,16 @@ def del_previous_job(transcription_job_name):
 
 
 def wait_for_previous_job_to_be_del(transcription_job_name):
-    MAX_WAIT = 10
+    MAX_WAIT = 80
     start_time = time.time()
 
     while True:
         try:
-            transcribe.get_transcription_job(
+            job = transcribe.get_transcription_job(
                 TranscriptionJobName=transcription_job_name
             )
+            if job:
+                logger.info(f"Previous job {transcription_job_name} still exists")
         except (
             transcribe.exceptions.NotFoundException,
             transcribe.exceptions.BadRequestException,
@@ -87,7 +89,7 @@ def wait_for_previous_job_to_be_del(transcription_job_name):
         if time.time() - start_time > MAX_WAIT:
             raise Exception(f"Could not delete previous job: {transcription_job_name}")
 
-        time.sleep(1)
+        time.sleep(10)
 
 
 def get_media_format(filename):
