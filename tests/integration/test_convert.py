@@ -25,7 +25,7 @@ def test_lambda_invoked(log_client_func):
     log_client_func()
 
 
-@pytest.mark.order(3)
-def test_cleanup(cleanup_test_files):
-    # This test uses the cleanup fixture and will be executed last
-    pass
+# @pytest.mark.order(3)
+# def test_cleanup(cleanup_test_files):
+#     # This test uses the cleanup fixture and will be executed last
+#     pass

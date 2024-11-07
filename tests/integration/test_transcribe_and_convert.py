@@ -38,6 +38,6 @@ def test_docx_in_bucket(s3_client, bucket, files_for_tests):
             time.sleep(1)
 
 
-def test_cleanup(cleanup_test_files):
-    # This test uses the cleanup fixture and will be executed last
-    pass
+# def test_cleanup(cleanup_test_files):
+#     # This test uses the cleanup fixture and will be executed last
+#     pass
