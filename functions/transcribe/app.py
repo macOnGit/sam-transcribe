@@ -71,7 +71,7 @@ def del_previous_job(transcription_job_name):
 
 
 def wait_for_previous_job_to_be_del(transcription_job_name):
-    MAX_WAIT = 5
+    MAX_WAIT = 10
     start_time = time.time()
 
     while True:
@@ -83,7 +83,7 @@ def wait_for_previous_job_to_be_del(transcription_job_name):
             transcribe.exceptions.NotFoundException,
             transcribe.exceptions.BadRequestException,
         ):
-            break
+            return
         if time.time() - start_time > MAX_WAIT:
             raise Exception(f"Could not delete previous job: {transcription_job_name}")
 
