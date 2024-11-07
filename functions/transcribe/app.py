@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 import boto3
 from pathlib import Path
 import re
@@ -33,6 +34,7 @@ def lambda_handler(event, context):
     transcription_job_name = f"audiotojson-{save_as_filename}"
 
     del_previous_job(transcription_job_name)
+    wait_for_previous_job_to_be_del(transcription_job_name)
 
     response = transcribe.start_transcription_job(
         TranscriptionJobName=transcription_job_name,
@@ -66,6 +68,23 @@ def del_previous_job(transcription_job_name):
         logger.info(f"Deleted previous transcription job: {transcription_job_name}")
     except Exception:
         pass
+
+
+def wait_for_previous_job_to_be_del(transcription_job_name):
+    MAX_WAIT = 5
+    start_time = time.time()
+
+    while True:
+        try:
+            transcribe.get_transcription_job(
+                TranscriptionJobName=transcription_job_name
+            )
+        except transcribe.exceptions.NotFoundException:
+            break
+        if time.time() - start_time > MAX_WAIT:
+            raise Exception(f"Could not delete previous job: {transcription_job_name}")
+
+        time.sleep(1)
 
 
 def get_media_format(filename):

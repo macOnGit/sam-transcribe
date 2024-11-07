@@ -292,11 +292,19 @@ def delete_test_job(files_for_tests):
                 f"Deleted transcription job: {files_for_tests.transcription_job_name}"
             )
             break
+        except transcribe.exceptions.BadRequestException:
+            print(
+                f"Transcription job to del not found: {files_for_tests.transcription_job_name}"
+            )
+            break
         except Exception as e:
             error = e
             job_del_attempts += 1
         if job_del_attempts >= MAX_DEL_ATTEMPTS:
-            raise Exception(f"Could not delete transcription job: {str(error)}")
+            print(
+                f"After max attempts, could not delete transcription job: {str(error)}"
+            )
+            break
         time.sleep(1)
 
 
