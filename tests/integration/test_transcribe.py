@@ -1,9 +1,14 @@
+"""
+We are testing that uploading an audio file at least fires
+running a transcription job.
+"""
+
 import pytest
 
 
 @pytest.mark.order(1)
-def test_file_upload(s3_client, bucket, files_for_tests):
-    s3_bucket_name = bucket.base
+def test_upload_bucket_upload(s3_client, upload_bucket, files_for_tests):
+    s3_bucket_name = upload_bucket.base
     file_path = str(files_for_tests.audio)
     filename = files_for_tests.audio.name
 

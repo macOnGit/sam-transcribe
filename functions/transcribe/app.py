@@ -19,6 +19,9 @@ def lambda_handler(event, context):
     max_speakers = os.environ.get("MAX_SPEAKERS")
     if not max_speakers:
         raise Exception("Cannot find env MAX_SPEAKERS")
+    outputbucketname = os.environ.get("DOWNLOAD_BUCKET_NAME")
+    if not outputbucketname:
+        raise Exception("Cannot find env DOWNLOAD_BUCKET_NAME")
 
     logger.info("## EVENT")
     logger.info(json.dumps(event, indent=2))
@@ -45,7 +48,7 @@ def lambda_handler(event, context):
             "ShowSpeakerLabels": True,
             "MaxSpeakerLabels": int(max_speakers),
         },
-        OutputBucketName=bucketname,
+        OutputBucketName=outputbucketname,
         OutputKey=f"transcribed/{save_as_filename}.json",
     )
 

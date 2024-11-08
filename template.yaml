@@ -2,9 +2,9 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: An AWS Serverless Application Model for transcribing audio to docx.
 Parameters:
-  TranscribeBucketName:
+  DownloadBucketName:
     Type: String
-  AudioBucketName:
+  UploadBucketName:
     Type: String
   MaxSpeakers:
     Type: Number
@@ -32,7 +32,7 @@ Resources:
       Environment:
         Variables:
           MAX_SPEAKERS: !Ref MaxSpeakers
-          TRANSCRIBE_BUCKET_NAME: !Ref TranscribeBucketName
+          DOWNLOAD_BUCKET_NAME: !Ref DownloadBucketName
       Policies:
       # TODO: narrower policies
         - AWSLambdaBasicExecutionRole
@@ -42,7 +42,7 @@ Resources:
         AudioUploaded:
           Type: S3
           Properties:
-            Bucket: !Ref AudioBucket
+            Bucket: !Ref UploadBucket
             Events:
               - s3:ObjectCreated:*
 
@@ -74,7 +74,7 @@ Resources:
         JSONCreated:
           Type: S3
           Properties:
-            Bucket: !Ref TranscribeBucket
+            Bucket: !Ref DownloadBucket
             Events:
               - s3:ObjectCreated:*
             Filter:
@@ -85,10 +85,10 @@ Resources:
                   - Name: suffix
                     Value: .json
 
-  TranscribeBucket:
+  DownloadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref TranscribeBucketName
+      BucketName: !Ref DownloadBucketName
       LifecycleConfiguration:
         Rules:
           # TODO: configurable expiration
@@ -96,10 +96,10 @@ Resources:
             Id: ExpirationRule
             Status: Enabled
 
-  AudioBucket:
+  UploadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref AudioBucketName
+      BucketName: !Ref UploadBucketName
       LifecycleConfiguration:
         Rules:
           # TODO: configurable expiration
@@ -109,14 +109,14 @@ Resources:
 
 Outputs:
   RunTranscriptionJobArn:
-    Description: "Transcription Job runner ARN"
+    Description: "Transcription job runner"
     Value: !Ref RunTranscriptionJob
-  TranscribeBucketArn:
-    Description: "Bucket for transcriptions"
-    Value: !Ref TranscribeBucket
   ConvertToDocxArn:
     Description: "Function which converts JSON into docx"
     Value: !Ref ConvertToDocx
-  AudioBucketArn:
-    Description: "Bucket for audio"
-    Value: !Ref AudioBucket
+  DownloadBucketArn:
+    Description: "Bucket for downloading transcriptions"
+    Value: !Ref DownloadBucket
+  UploadBucketArn:
+    Description: "Bucket for uploading audio files"
+    Value: !Ref UploadBucket

@@ -22,9 +22,10 @@ class Bucket:
     transcribed: str
     converted: str
 
-    @property
-    def prefixes(self) -> list:
-        return [self.transcribed, self.converted]
+
+@dataclass
+class AudioBucket:
+    base: str
 
 
 @dataclass
@@ -57,9 +58,15 @@ def mock_s3_client(aws_credentials):
 
 
 @pytest.fixture
-def mock_bucket(mock_s3_client, bucket):
-    mock_s3_client.create_bucket(Bucket=bucket.base)
-    return bucket
+def mock_download_bucket(mock_s3_client, download_bucket):
+    mock_s3_client.create_bucket(Bucket=download_bucket.base)
+    return download_bucket
+
+
+@pytest.fixture
+def mock_upload_bucket(mock_s3_client, upload_bucket):
+    mock_s3_client.create_bucket(Bucket=upload_bucket.base)
+    return upload_bucket
 
 
 @pytest.fixture
@@ -80,19 +87,31 @@ def samconfig_params():
 
 
 @pytest.fixture(scope="session")
-def bucket(samconfig_params):
+def download_bucket(samconfig_params):
     match = re.search(
-        'TranscribeBucketName="((?!(^xn--|.+-s3alias$))[a-z0-9][a-z0-9-]{1,61}[a-z0-9])"',
+        'DownloadBucketName="((?!(^xn--|.+-s3alias$))[a-z0-9][a-z0-9-]{1,61}[a-z0-9])"',
         samconfig_params,
     )
 
     if not match:
-        raise Exception("Could not find TranscribeBucketName in samconfig")
+        raise Exception("Could not find DownloadBucketName in samconfig")
     return Bucket(
         base=match.group(1),
         transcribed=f"transcribed",
         converted=f"converted",
     )
+
+
+@pytest.fixture(scope="session")
+def upload_bucket(samconfig_params):
+    match = re.search(
+        'UploadBucketName="((?!(^xn--|.+-s3alias$))[a-z0-9][a-z0-9-]{1,61}[a-z0-9])"',
+        samconfig_params,
+    )
+
+    if not match:
+        raise Exception("Could not find UploadBucketName in samconfig")
+    return AudioBucket(base=match.group(1))
 
 
 @pytest.fixture(scope="session")
@@ -247,27 +266,33 @@ def log_client_func(logs_client, request):
 
 
 @pytest.fixture(scope="session")
-def s3_objects_to_delete(bucket, files_for_tests):
+def s3_objects_to_delete_in_download_bucket(download_bucket, files_for_tests):
+    return [
+        {
+            # Delete uploaded transcribed file
+            "Key": f"{download_bucket.transcribed}/{files_for_tests.transcribed.name}"
+        },
+        {
+            # Delete uploaded converted file
+            "Key": f"{download_bucket.converted}/{files_for_tests.converted.name}"
+        },
+        {
+            # Delete generated transcribed file
+            "Key": f"{download_bucket.transcribed}/{files_for_tests.generated_transcription}"
+        },
+        {
+            # Delete generated converted file
+            "Key": f"{download_bucket.converted}/{files_for_tests.generated_converted}"
+        },
+    ]
+
+
+@pytest.fixture(scope="session")
+def s3_objects_to_delete_in_upload_bucket(files_for_tests):
     return [
         {
             # Delete uploaded audio file
             "Key": files_for_tests.audio.name
-        },
-        {
-            # Delete uploaded transcribed file
-            "Key": f"{bucket.transcribed}/{files_for_tests.transcribed.name}"
-        },
-        {
-            # Delete uploaded converted file
-            "Key": f"{bucket.converted}/{files_for_tests.converted.name}"
-        },
-        {
-            # Delete generated transcribed file
-            "Key": f"{bucket.transcribed}/{files_for_tests.generated_transcription}"
-        },
-        {
-            # Delete generated converted file
-            "Key": f"{bucket.converted}/{files_for_tests.generated_converted}"
         },
     ]
 
@@ -307,7 +332,8 @@ def delete_test_job(files_for_tests):
 
 
 @pytest.fixture(scope="session")
-def cleanup_test_files(bucket, s3_objects_to_delete):
+def cleanup_test_files(download_bucket, s3_objects_to_delete):
+    # TODO: cleanup audio bucket
     # Create a new S3 client for cleanup
     s3_client = boto3.client("s3")
 
@@ -318,7 +344,7 @@ def cleanup_test_files(bucket, s3_objects_to_delete):
 
     while True:
         response = s3_client.delete_objects(
-            Bucket=bucket.base,
+            Bucket=download_bucket.base,
             Delete={"Objects": s3_objects_to_delete},
         )
         print("Response:")

@@ -26,9 +26,6 @@ def lambda_handler(event, context):
     common_filename = os.environ.get("COMMON_FILENAME")
     if not common_filename:
         raise Exception("Cannot find env COMMON_FILENAME")
-    upload_bucket = os.environ.get("TRANSCRIBE_BUCKET_NAME")
-    if not upload_bucket:
-        raise Exception("Cannot find env TRANSCRIBE_BUCKET_NAME")
 
     logger.info("## EVENT")
     logger.info(json.dumps(event, indent=2))
@@ -38,6 +35,7 @@ def lambda_handler(event, context):
     # Docket only
     docket = get_docket(key)
     download_bucket = event["Records"][0]["s3"]["bucket"]["name"]
+    upload_bucket = download_bucket
     # Create a path in the Lambda tmp directory to save the file to
     download_path = f"/tmp/{uuid.uuid4()}.json"
     # Create another path to save the encrypted file to

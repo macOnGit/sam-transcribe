@@ -1,15 +1,22 @@
+"""
+We are testing the function which converts the transcription, a json file,
+into a converted, docx file.
+"""
+
 import pytest
 
 
 @pytest.mark.order(1)
-def test_source_bucket_transcribe_available(s3_client, bucket, files_for_tests):
+def test_download_bucket_upload(s3_client, download_bucket, files_for_tests):
     file_path = str(files_for_tests.transcribed)
-    prefixed_file_name = f"{bucket.transcribed}/{files_for_tests.transcribed.name}"
+    prefixed_file_name = (
+        f"{download_bucket.transcribed}/{files_for_tests.transcribed.name}"
+    )
 
     file_uploaded = False
 
     try:
-        s3_client.upload_file(file_path, bucket.base, prefixed_file_name)
+        s3_client.upload_file(file_path, download_bucket.base, prefixed_file_name)
         file_uploaded = True
     except Exception as err:
         print(str(err))
