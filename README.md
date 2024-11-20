@@ -45,6 +45,9 @@ Testing framework is [pytest](https://docs.pytest.org/en/stable/index.html) +
 Create a folder in the bucket using the command
 `aws s3api put-object --bucket bucket-name --key folder-name/ --content-length 0`
 
+Upload the application's artifacts to Amazon S3 and output a new template file
+`sam package --output-template-file package.yml --s3-bucket <your-bucket-name>`
+
 ## Logging
 
 [logging in lambda](https://docs.aws.amazon.com/lambda/latest/dg/python-logging.html)
