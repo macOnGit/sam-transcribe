@@ -83,20 +83,13 @@ def samconfig_params():
     samconfig_file = base_path / "samconfig.toml"
     with samconfig_file.open("rb") as fp:
         data = tomllib.load(fp)
-    return data["default"]["deploy"]["parameters"]["parameter_overrides"]
+    return data["default"]["deploy"]["parameters"]
 
 
 @pytest.fixture(scope="session")
 def download_bucket(samconfig_params):
-    match = re.search(
-        'DownloadBucketName="((?!(^xn--|.+-s3alias$))[a-z0-9][a-z0-9-]{1,61}[a-z0-9])"',
-        samconfig_params,
-    )
-
-    if not match:
-        raise Exception("Could not find DownloadBucketName in samconfig")
     return Bucket(
-        base=match.group(1),
+        base=samconfig_params["stack_name"] + "-download-bucket",
         transcribed=f"transcribed",
         converted=f"converted",
     )
@@ -104,19 +97,15 @@ def download_bucket(samconfig_params):
 
 @pytest.fixture(scope="session")
 def upload_bucket(samconfig_params):
-    match = re.search(
-        'UploadBucketName="((?!(^xn--|.+-s3alias$))[a-z0-9][a-z0-9-]{1,61}[a-z0-9])"',
-        samconfig_params,
-    )
-
-    if not match:
-        raise Exception("Could not find UploadBucketName in samconfig")
-    return AudioBucket(base=match.group(1))
+    return AudioBucket(base=samconfig_params["stack_name"] + "-upload-bucket")
 
 
 @pytest.fixture(scope="session")
 def common_filename(samconfig_params):
-    match = re.search('CommonFilename="([ a-zA-Z0-9!_.*\'()-]+)"', samconfig_params)
+    match = re.search(
+        'CommonFilename="([ a-zA-Z0-9!_.*\'()-]+)"',
+        samconfig_params["parameter_overrides"],
+    )
     if not match:
         raise Exception("Could not find CommonFileName in samconfig")
     return match.group(1)

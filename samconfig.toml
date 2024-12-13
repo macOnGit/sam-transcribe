@@ -5,5 +5,5 @@ resolve_s3 = true
 s3_prefix = "sam-transcribe"
 region = "us-east-1"
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "DownloadBucketName=\"sam-transcribe-test-download-bucket\" UploadBucketName=\"sam-transcribe-test-upload-bucket\" MaxSpeakers=\"5\" CommonFilename=\"Disclosure Call\""
+parameter_overrides = "MaxSpeakers=\"5\" CommonFilename=\"Disclosure Call\""
 image_repositories = []

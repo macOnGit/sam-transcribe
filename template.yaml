@@ -8,10 +8,6 @@ Globals:
     Handler: app.lambda_handler
 
 Parameters:
-  DownloadBucketName:
-    Type: String
-  UploadBucketName:
-    Type: String
   MaxSpeakers:
     Type: Number
   CommonFilename:
@@ -34,7 +30,7 @@ Resources:
       Environment:
         Variables:
           MAX_SPEAKERS: !Ref MaxSpeakers
-          DOWNLOAD_BUCKET_NAME: !Ref DownloadBucketName
+          DOWNLOAD_BUCKET_NAME: !Sub "${AWS::StackName}-download-bucket"
       Policies:
       # TODO: narrower policies
         - AWSLambdaBasicExecutionRole
@@ -86,7 +82,7 @@ Resources:
   DownloadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref DownloadBucketName
+      BucketName: !Sub "${AWS::StackName}-download-bucket"
       LifecycleConfiguration:
         Rules:
           # TODO: configurable expiration
@@ -97,7 +93,7 @@ Resources:
   UploadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref UploadBucketName
+      BucketName: !Sub "${AWS::StackName}-upload-bucket"
       LifecycleConfiguration:
         Rules:
           # TODO: configurable expiration
