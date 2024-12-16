@@ -3,6 +3,7 @@ import json
 import time
 import boto3
 from pathlib import Path
+from urllib.parse import unquote_plus
 import re
 import os
 
@@ -26,14 +27,14 @@ def lambda_handler(event, context):
     logger.info("## EVENT")
     logger.info(json.dumps(event, indent=2))
 
-    # filename includes directory path
-    filename = event["Records"][0]["s3"]["object"]["key"]
+    # key includes directory path
+    key = unquote_plus(event["Records"][0]["s3"]["object"]["key"])
     bucketname = event["Records"][0]["s3"]["bucket"]["name"]
-    url = f"s3://{bucketname}/{filename}"
+    url = f"s3://{bucketname}/{key}"
     # The final path component, without its suffix
-    save_as_filename = get_docket(filename)
+    save_as_filename = get_docket(key)
     # The suffix
-    media_format = get_media_format(filename)
+    media_format = get_media_format(key)
     transcription_job_name = f"audiotojson-{save_as_filename}"
 
     del_previous_job(transcription_job_name)
