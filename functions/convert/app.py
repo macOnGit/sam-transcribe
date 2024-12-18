@@ -1,34 +1,30 @@
-import re
-import uuid
-import os
-import io
+from re import compile, IGNORECASE
+from uuid import uuid4
+from os import environ
+from io import StringIO
 from contextlib import redirect_stdout
-import logging
+from logging import getLogger
 from urllib.parse import unquote_plus
-import json
+from json import dumps
 from pathlib import Path
-import boto3
-from botocore.exceptions import ClientError
-import tscribe
+from boto3 import client
+from tscribe import write as docx_writer
 
 
-s3_client = boto3.client("s3")
-valid_docket_type1 = re.compile(r"P\d+-\w{2}\d{2}", flags=re.IGNORECASE)
-valid_docket_type2 = re.compile(r"\w{3}-\d{3}\w{2}\d{2}")
-logger = logging.getLogger()
+s3_client = client("s3")
+valid_docket_type1 = compile(r"P\d+-\w{2}\d{2}", flags=IGNORECASE)
+valid_docket_type2 = compile(r"\w{3}-\d{3}\w{2}\d{2}")
+logger = getLogger()
 logger.setLevel("INFO")
 
 
 def lambda_handler(event, context):
-
-    os.environ.setdefault("MPLCONFIGDIR", f"/tmp/matplotlib-{uuid.uuid4()}")
-
-    common_filename = os.environ.get("COMMON_FILENAME")
+    common_filename = environ.get("COMMON_FILENAME")
     if not common_filename:
         raise Exception("Cannot find env COMMON_FILENAME")
 
     logger.info("## EVENT")
-    logger.info(json.dumps(event, indent=2))
+    logger.info(dumps(event, indent=2))
 
     # key includes directory path (e.g., transcribed/P12345-US01)
     key = unquote_plus(event["Records"][0]["s3"]["object"]["key"])
@@ -37,33 +33,37 @@ def lambda_handler(event, context):
     download_bucket = event["Records"][0]["s3"]["bucket"]["name"]
     upload_bucket = download_bucket
     # Create a path in the Lambda tmp directory to save the file to
-    download_path = f"/tmp/{uuid.uuid4()}.json"
+    download_path = f"/tmp/{uuid4()}.json"
     # Create another path to save the encrypted file to
-    upload_path = f"/tmp/converted-{uuid.uuid4()}.docx"
+    upload_path = f"/tmp/converted-{uuid4()}.docx"
 
-    try:
-        s3_client.download_file(download_bucket, key, download_path)
-        logger.info("file downloaded")
-    except ClientError as e:
-        logger.error(e)
-        return False
+    download_file(download_bucket, key, download_path)
+    new_key = make_new_key(docket, common_filename)
+    result = make_docx_file(download_path, upload_path)
+    upload_file(upload_path, upload_bucket, new_key)
 
-    with io.StringIO() as buf, redirect_stdout(buf):
+    logger.info("## DONE")
+    logger.info(result)
+
+
+def download_file(download_bucket, key, download_path):
+    s3_client.download_file(download_bucket, key, download_path)
+    logger.info("file downloaded")
+
+
+def upload_file(upload_path, upload_bucket, new_key):
+    s3_client.upload_file(upload_path, upload_bucket, new_key)
+    logger.info("file uploaded")
+
+
+def make_docx_file(download_path, upload_path):
+    with StringIO() as buf, redirect_stdout(buf):
         try:
-            tscribe.write(download_path, save_as=upload_path)
+            docx_writer(download_path, save_as=upload_path)
         except Exception as e:
             raise Exception(f"Failed to create docx: {str(e)}")
-        output = buf.getvalue()
-
-    new_key = make_new_key(docket, common_filename)
-    try:
-        s3_client.upload_file(upload_path, upload_bucket, new_key)
-        logger.info("## DONE")
-        logger.info(output)
-    except ClientError as e:
-        logger.error(e)
-        return False
-    return True
+        result = buf.getvalue()
+    return result
 
 
 def make_new_key(docket, common_filename):

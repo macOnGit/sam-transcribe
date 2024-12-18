@@ -49,8 +49,8 @@ Resources:
     Properties:
       CodeUri: functions/convert/
       Description: 'Converts a transcribed JSON file into docx'
-      MemorySize: 256
-      Timeout: 120
+      MemorySize: 512
+      Timeout: 480
       LoggingConfig:
         LogFormat: JSON
         LogGroup: /aws/lambda/sam-transcribe-ConvertToDocx
@@ -59,6 +59,7 @@ Resources:
         MaximumRetryAttempts: 2
       Environment:
         Variables:
+          MPLCONFIGDIR: !Sub "/tmp/matplotlib-{AWS::StackName}"
           COMMON_FILENAME: !Ref CommonFilename
       Policies:
       # TODO: narrower policies
