@@ -12,7 +12,7 @@ def test_gets_docket_from_filename(event):
 def test_default_filename():
     filename = "somefile.mp3"
     docket = app.get_docket(filename)
-    assert docket == "Transcription-"
+    assert "Transcription-" in docket
 
 
 def test_raises_without_common_filename_env():

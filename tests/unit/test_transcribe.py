@@ -9,11 +9,10 @@ def test_gets_docket_from_filename(event):
     assert docket == "P12345-US01"
 
 
-def test_raises_when_valid_docket_not_found():
+def test_default_filename():
     filename = "something invalid"
-    with pytest.raises(Exception) as err:
-        app.get_docket(filename)
-    assert "valid docket" in str(err.value)
+    docket = app.get_docket(filename)
+    assert "Transcription-" in docket
 
 
 @pytest.mark.parametrize("event", ["audio_uploaded"], indirect=True)
