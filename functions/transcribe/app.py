@@ -63,6 +63,7 @@ def get_docket(filename):
     if match:
         return match.group(0).upper()
     else:
+        # TODO: no exception, have default filename
         raise Exception(f"Could not find a valid docket number in: {path.stem}")
 
 

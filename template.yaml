@@ -32,10 +32,10 @@ Resources:
           MAX_SPEAKERS: !Ref MaxSpeakers
           DOWNLOAD_BUCKET_NAME: !Sub "${AWS::StackName}-download-bucket"
       Policies:
-      # TODO: narrower policies
         - AWSLambdaBasicExecutionRole
         - AmazonTranscribeFullAccess
-        - AmazonS3FullAccess
+        - S3FullAccessPolicy:
+            BucketName: !Sub "${AWS::StackName}-download-bucket"
       Events:
         AudioUploaded:
           Type: S3
@@ -62,9 +62,9 @@ Resources:
           MPLCONFIGDIR: !Sub "/tmp/matplotlib-{AWS::StackName}"
           COMMON_FILENAME: !Ref CommonFilename
       Policies:
-      # TODO: narrower policies
         - AWSLambdaBasicExecutionRole
-        - AmazonS3FullAccess
+        - S3FullAccessPolicy:
+            BucketName: !Sub "${AWS::StackName}-download-bucket"
       Events:
         JSONCreated:
           Type: S3
