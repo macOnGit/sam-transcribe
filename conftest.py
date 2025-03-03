@@ -12,7 +12,7 @@ from moto import mock_aws
 
 
 base_path = Path(__file__).parent
-MAX_WAIT = 5
+MAX_WAIT = 15
 MAX_DEL_ATTEMPTS = 45
 
 

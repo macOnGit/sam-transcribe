@@ -10,7 +10,8 @@ Steps:
 
 ## Lambda Functions
 
-Previous transcription job of same name will be deleted to avoid conflict
+Previous transcription job of same name will be deleted to avoid conflict error.  
+If a docket number cannot be extracted then "Transcription-<int(UTC)>" will be used.
 
 ## S3 Buckets
 

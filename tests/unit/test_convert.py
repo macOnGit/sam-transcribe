@@ -9,6 +9,12 @@ def test_gets_docket_from_filename(event):
     assert docket == "P12345-US01"
 
 
+def test_default_filename():
+    filename = "somefile.mp3"
+    docket = app.get_docket(filename)
+    assert docket == "Transcription-"
+
+
 def test_raises_without_common_filename_env():
     with pytest.raises(Exception) as err:
         app.lambda_handler({}, {})
