@@ -1,4 +1,4 @@
-from re import compile, IGNORECASE
+import re
 from time import time
 from uuid import uuid4
 from os import environ
@@ -13,13 +13,15 @@ from tscribe import write as docx_writer
 
 
 s3_client = client("s3")
-valid_docket_type1 = compile(r"P\d+-\w{2}\d{2}", flags=IGNORECASE)
-valid_docket_type2 = compile(r"\w{3}-\d{3}\w{2}\d{2}")
+valid_docket_type1 = re.compile(r"P\d+-\w{2}\d{2}", flags=re.IGNORECASE)
+valid_docket_type2 = re.compile(r"\w{3}-\d{3}\w{2}\d{2}")
 logger = getLogger()
 logger.setLevel("INFO")
 
 
 def lambda_handler(event, context):
+    re.purge()
+
     common_filename = environ.get("COMMON_FILENAME")
     if not common_filename:
         raise Exception("Cannot find env COMMON_FILENAME")

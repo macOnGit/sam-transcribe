@@ -16,6 +16,7 @@ logger.setLevel("INFO")
 
 
 def lambda_handler(event, context):
+    re.purge()
 
     max_speakers = os.environ.get("MAX_SPEAKERS")
     if not max_speakers:
