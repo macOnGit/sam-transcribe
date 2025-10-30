@@ -15,6 +15,12 @@ def test_default_filename():
     assert "Transcription-" in docket
 
 
+def test_logs_warning_for_invalid_docket(caplog):
+    filename = "invalid_filename.mp3"
+    app.get_docket(filename)
+    assert any("Docket not found in filename" in message for message in caplog.messages)
+
+
 @pytest.mark.parametrize("event", ["audio_uploaded"], indirect=True)
 def test_gets_media_format(event):
     filename = event["Records"][0]["s3"]["object"]["key"]

@@ -9,7 +9,7 @@ import os
 
 
 transcribe = boto3.client("transcribe")
-valid_docket_type1 = re.compile(r"P\d+-\w{2}\d{2}", flags=re.IGNORECASE)
+valid_docket_type1 = re.compile(r"P\d+-\w{2}\d{0,2}", flags=re.IGNORECASE)
 valid_docket_type2 = re.compile(r"\w{3}-\d{3}\w{2}\d{2}")
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -64,6 +64,7 @@ def get_docket(filename):
     if match:
         return match.group(0).upper()
     else:
+        logger.warning(f"Docket not found in filename: {path.stem}")
         return f"Transcription-{int(time.time())}"
 
 

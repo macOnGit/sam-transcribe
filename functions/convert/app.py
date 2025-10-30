@@ -76,7 +76,7 @@ def make_new_key(docket, common_filename):
 def get_docket(filename):
     path = Path(filename)
     match = valid_docket_type1.search(path.stem) or valid_docket_type2.search(path.stem)
-    if match:
-        return match.group(0).upper()
-    else:
-        return f"Transcription-{int(time())}"
+    if path.stem.startswith("Transcription") or match is None:
+        logger.warning(f"Docket not found in filename: {path.stem}")
+        return f"Conversion-{int(time())}"
+    return match.group(0).upper()
