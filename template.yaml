@@ -2,9 +2,26 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: An AWS Serverless Application Model for transcribing audio to docx.
 
+Metadata:
+  S3Defaults:
+    PublicAccessBlock: &PublicAccessBlock
+      BlockPublicAcls: true
+      BlockPublicPolicy: true
+      IgnorePublicAcls: true
+      RestrictPublicBuckets: true
+    BucketGuard: &BucketGuard
+      Guard:
+        SuppressedRules:
+          - S3_BUCKET_LOGGING_ENABLED
+          - S3_BUCKET_VERSIONING_ENABLED
+          - S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED
+          - S3_DEFAULT_ENCRYPTION_KMS
+  DownloadBucketName: &DownloadBucketName !Sub "${AWS::AccountId}-${AWS::Region}-download-bucket"
+  UploadBucketName: &UploadBucketName !Sub "${AWS::AccountId}-${AWS::Region}-upload-bucket"
+
 Globals:
   Function:
-    Runtime: python3.11
+    Runtime: python3.14
     Handler: app.lambda_handler
 
 Parameters:
@@ -30,12 +47,12 @@ Resources:
       Environment:
         Variables:
           MAX_SPEAKERS: !Ref MaxSpeakers
-          DOWNLOAD_BUCKET_NAME: !Sub "${AWS::StackName}-download-bucket"
+          DOWNLOAD_BUCKET_NAME: !Ref DownloadBucket
       Policies:
         - AWSLambdaBasicExecutionRole
         - AmazonTranscribeFullAccess
         - S3FullAccessPolicy:
-            BucketName: !Sub "${AWS::StackName}-download-bucket"
+            BucketName: *DownloadBucketName
       Events:
         AudioUploaded:
           Type: S3
@@ -64,7 +81,7 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
         - S3FullAccessPolicy:
-            BucketName: !Sub "${AWS::StackName}-download-bucket"
+            BucketName: *DownloadBucketName
       Events:
         JSONCreated:
           Type: S3
@@ -83,24 +100,28 @@ Resources:
   DownloadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${AWS::StackName}-download-bucket"
+      BucketName: *DownloadBucketName
       LifecycleConfiguration:
         Rules:
           # TODO: configurable expiration
           - ExpirationInDays: 5
             Id: ExpirationRule
             Status: Enabled
+      PublicAccessBlockConfiguration: *PublicAccessBlock
+    Metadata: *BucketGuard
 
   UploadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${AWS::StackName}-upload-bucket"
+      BucketName: *UploadBucketName
       LifecycleConfiguration:
         Rules:
           # TODO: configurable expiration
           - ExpirationInDays: 1
             Id: ExpirationRule
             Status: Enabled
+      PublicAccessBlockConfiguration: *PublicAccessBlock
+    Metadata: *BucketGuard
 
 Outputs:
   RunTranscriptionJobArn:
