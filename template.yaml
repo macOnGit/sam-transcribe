@@ -53,6 +53,8 @@ Resources:
         - AmazonTranscribeFullAccess
         - S3FullAccessPolicy:
             BucketName: *DownloadBucketName
+        - S3FullAccessPolicy:
+            BucketName: *UploadBucketName
       Events:
         AudioUploaded:
           Type: S3
@@ -66,7 +68,7 @@ Resources:
     Properties:
       CodeUri: functions/convert/
       Description: 'Converts a transcribed JSON file into docx'
-      MemorySize: 512
+      MemorySize: 1024
       Timeout: 480
       LoggingConfig:
         LogFormat: JSON
