@@ -21,7 +21,7 @@ Metadata:
 
 Globals:
   Function:
-    Runtime: python3.11
+    Runtime: python3.13
     Handler: app.lambda_handler
 
 Parameters:
